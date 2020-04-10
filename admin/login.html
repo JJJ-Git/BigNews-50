@@ -38,6 +38,25 @@
         </div>
     </div>
 
+    <!-- 弹出的提示模态框 -->
+    <div class="modal fade" id="myModal" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span
+                            aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title">提示</h4>
+                </div>
+                <div class="modal-body">
+                    <p>One fine body&hellip;</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">确定</button>
+                </div>
+            </div><!-- /.modal-content -->
+        </div><!-- /.modal-dialog -->
+    </div><!-- /.modal -->
+
     <script src="./libs/http.js"></script>
     <script>
         // 登录按钮点击事件
@@ -47,7 +66,8 @@
             var userName = $('.input_txt').val().trim();
             var passWord = $('.input_pass').val().trim();
             if (userName == '' || passWord == '') {
-                alert('用户名和密码不能为空！');
+                $('#myModal p').text('账号和密码不能为空！');
+                $('#myModal').modal();
                 return;
             }
             $.ajax({
@@ -59,11 +79,15 @@
                 },
                 success: function (back) {
                     if (back.code == 200) {
-                        alert('登录成功！');
                         localStorage.setItem('token', back.token);
-                        window.location.href = './index.html';
+                        $('#myModal p').text('登陆成功！');
+                        $('#myModal').modal();
+                        $('#myModal').on('hidden.bs.modal', function (e) {
+                            window.location.href = './index.html';
+                        });
                     } else {
-                        alert('账号或密码错误！');
+                        $('#myModal p').text('账号或密码错误！');
+                        $('#myModal').modal();
                     }
                 }
             });
