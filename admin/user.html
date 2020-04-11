@@ -44,7 +44,7 @@
                     <label for="inputPassword3" class="col-sm-2 control-label">用户图标：</label>
                     <div class="col-sm-10">
                         <img src="images/2.jpg" alt="" class="user_pic">
-                        <input style="display: block" name="userPic" type="file" id="exampleInputFile">
+                        <input style="display: none" name="userPic" type="file" id="exampleInputFile">
                         <!-- 给label标签的for属性赋值,值是input标签的id,那这样的话点击label就相当于点击了input -->
                         <br>
                         <label for="exampleInputFile">
@@ -68,6 +68,64 @@
             </form>
         </div>
     </div>
+
+    <script src="./libs/http.js"></script>
+    <script>
+        $(function () {
+            // 选择图片预览功能
+            $('#exampleInputFile').on('change', function () {
+                var url = URL.createObjectURL(this.files[0]);
+                $('.user_pic').attr('src', url);
+            })
+
+            // 大发送ajax请求获取用户详细信息
+            $.ajax({
+                type: 'get',
+                url: BigNew.user_detail,
+                success: function (back) {
+                    // 请求成功后将数据展示在相应的位置
+                    if (back.code == 200) {
+                        for (var key in back.data) {
+                            $('.' + key).val(back.data[key]);
+                        }
+                        $('.user_pic').attr('src', back.data.userPic);
+                    }
+                }
+            });
+
+            // 修改按钮点击事件
+            $('.btn-edit').on('click', function (e) {
+                e.preventDefault();
+                // 获取用户输入的修改后的数据
+                var fd = new FormData($('form')[0]);
+                // 发送ajax请求修改用户信息
+                $.ajax({
+                    type: 'post',
+                    url: BigNew.user_edit,
+                    data: fd,
+                    contentType: false,
+                    processData: false,
+                    success: function (back) {
+                        // 如果设置成功则将主页中的信息更新
+                        if (back.code == 200) {
+                            // 获取用户信息设置给相应的位置
+                            $.ajax({
+                                type: 'get',
+                                url: BigNew.user_info,
+                                success: function (back) {
+                                    parent.$('.user_info>span>i').text(back.data.nickname);
+                                    parent.$('.user_info>img').attr('src', back.data.userPic);
+                                    parent.$('.header_bar img').attr('src', back.data.userPic);
+                                }
+                            });
+                        }
+                    }
+                });
+            })
+        })
+    </script>
+
+
 </body>
 
 </html>
