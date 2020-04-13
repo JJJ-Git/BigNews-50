@@ -62,13 +62,14 @@
                 </div>
                 <div class="modal-body">
                     <form>
+                        <input type="hidden" name="id" id="hidden-input">
                         <div class="form-group">
                             <label for="recipient-name" class="control-label">文章分类名称：</label>
-                            <input type="text" class="form-control" id="recipient-name">
+                            <input type="text" name="name" class="form-control" id="recipient-name">
                         </div>
                         <div class="form-group">
                             <label for="message-text" class="control-label">文章分类别名：</label>
-                            <input class="form-control" id="message-text"></>
+                            <input name="slug" class="form-control" id="message-text"></>
                         </div>
                     </form>
                 </div>
@@ -127,8 +128,8 @@
                     // 并将原先的内容显示在输入框中
                     $('#recipient-name').val($(e.relatedTarget).parent().prev().prev().text());
                     $('#message-text').val($(e.relatedTarget).parent().prev().text());
-                    // 给弹出模态框中的编辑按钮添加一个data-id属性，值为该文章类别的id
-                    $('.send').attr('data-id', $(e.relatedTarget).attr('data-id'));
+                    // 给弹出模态框中的隐藏input添加value属性，值为该文章类别的id
+                    $('#hidden-input').val($(e.relatedTarget).attr('data-id'));
                 }
             })
 
@@ -166,24 +167,28 @@
                             }
                         }
                     });
-                } else { // 编辑按钮
+                }
+                else { // 编辑按钮
                     // 获取用户输入的信息,并做非空判断
+                    var id = $('#hidden-input').val().trim();
                     var name = $('#recipient-name').val().trim();
                     var slug = $('#message-text').val().trim();
                     if (name == '' || slug == '') {
                         alert('输入不能为空！');
                         return;
                     }
+                    // 如果觉得上述获取数据方法麻烦可以用下列方法
+                    var data = $('#myModal form').serialize();
                     // 发送ajax请求编辑文章类别
-                    var id = $(this).attr('data-id');
                     $.ajax({
                         type: 'post',
                         url: BigNew.category_edit,
-                        data: {
-                            id: id,
-                            name: name,
-                            slug: slug
-                        },
+                        // data: {
+                        //     id: id,
+                        //     name: name,
+                        //     slug: slug
+                        // },
+                        data: data,
                         success: function (back) {
                             // 请求成功后隐藏模态框，并调用函数重新获取并设置数据
                             if (back.code == 200) {
