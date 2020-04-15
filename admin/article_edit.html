@@ -12,8 +12,16 @@
     <link rel="stylesheet" href="css/main.css">
     <!-- jq -->
     <script src="./libs/jquery-1.12.4.min.js"></script>
+    <!-- 接口js -->
+    <script src="./libs/http.js"></script>
     <!-- 模板引擎 -->
     <script src="./libs/template-web.js"></script>
+    <!-- 日历插件需要的文件 -->
+    <link rel="stylesheet" href="./libs/测试/test/jeDate-test.css">
+    <link rel="stylesheet" href="./libs/测试/skin/jedate.css">
+    <script src="./libs/测试/src/jedate.js"></script>
+    <!-- 富文本插件需要的文件 -->
+    <script src="./libs/wangEditor/wangEditor.min.js"></script>
 </head>
 
 <body>
@@ -25,7 +33,7 @@
             <form class="form-horizontal article_form" id="form">
                 <div class="form-group">
                     <label for="inputTitle" class="col-sm-2 control-label">文章标题：</label>
-                    <div class="col-sm-10">
+                    <div class="col-sm-8">
                         <input type="text" name="title" class="form-control title" id="inputTitle" value="文章标题文字">
                     </div>
                 </div>
@@ -38,24 +46,32 @@
                 </div>
                 <div class="form-group">
                     <label for="inputCategory" class="col-sm-2 control-label">文章类别：</label>
-                    <div class="col-sm-4">
+                    <div class="col-sm-2">
                         <select class="form-control category" name="categoryId">
-                            <option>类别一</option>
+                            <!-- <option>类别一</option>
                             <option>类别二</option>
                             <option>类别三</option>
-                            <option selected>类别四</option>
-                            <option>类别五</option>
+                            <option>类别四</option>
+                            <option>类别五</option> -->
                         </select>
                     </div>
                 </div>
                 <div class="form-group">
                     <label class="col-sm-2 control-label">发布时间：</label>
                     <div class="col-sm-4">
+                        <div class="jeinpbox">
+                            <input type="text" name="date" class="jeinput" id="testico" placeholder="YYYY-MM-DD">
+                            <div class="icons jebtns" onclick="jeDate('#testico',{trigger:false,format: 'YYYY-MM-DD'})">
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <div class="form-group">
                     <label for="inputEmail3" class="col-sm-2 control-label">文章内容：</label>
-                    <div class="col-sm-10">
+                    <div class="col-sm-8">
+                        <div id="editor">
+                            <!-- <p>欢迎使用 <b>wangEditor</b> 富文本编辑器</p> -->
+                        </div>
                     </div>
                 </div>
                 <div class="form-group">
@@ -67,6 +83,126 @@
             </form>
         </div>
     </div>
+
+    <!-- 文章类别下拉框模板 -->
+    <script id="temp-articleType" type="text/html">
+        {{each data v}}
+            <option value={{v.id}}>{{v.name}}</option>
+        {{/each}}
+    </script>
+
+    <script>
+        $(function () {
+            // 选择图片预览功能
+            $('#inputCover').on('change', function () {
+                var url = URL.createObjectURL(this.files[0]);
+                $('.article_cover').attr('src', url);
+            })
+
+            // 获取所有文章类别并显示在下拉框中
+            $.ajax({
+                type: 'get',
+                url: BigNew.category_list,
+                success: function (back) {
+                    // console.log(back);
+                    if (back.code == 200) {
+                        $('.category').html(template('temp-articleType', back));
+                    }
+                }
+            });
+
+            // 日历插件input框点击弹出日历框
+            jeDate("#testico", {
+                isinitVal: true,
+                format: "YYYY-MM-DD",
+                zIndex: 2099,
+            })
+
+            // 用插件生成富文本输入框
+            var E = window.wangEditor
+            var myEditor = new E('#editor')
+            // 或者 var editor = new E( document.getElementById('editor') )
+            myEditor.create();
+
+            // 获取点击编辑按钮的文章的id
+            var articleId = window.location.search.split('=')[1];
+            // 发送ajax请求获取该文章的信息文章
+            $.ajax({
+                type: 'get',
+                url: BigNew.article_search,
+                data: {
+                    id: articleId
+                },
+                success: function (back) {
+                    // console.log(back);
+                    if (back.code == 200) {
+                        // 将文章信息显示在相应位置
+                        $('#inputTitle').val(back.data.title);
+                        $('.article_cover').attr('src', back.data.cover);
+                        $('.category').val(back.data.categoryId);
+                        $('#testico').val(back.data.date);
+                        myEditor.txt.html(back.data.content);
+                    }
+                }
+            });
+
+            // 修改按钮点击事件
+            $('.btn-edit').on('click', function (e) {
+                e.preventDefault();
+                var fd = new FormData($('form')[0]);
+                // 将修改文章的id、文章内容和文章状态添加进fd中
+                fd.append('id',articleId);
+                fd.append('content', myEditor.txt.html());
+                fd.append('state', '已发布');
+                // 发送ajax请求
+                $.ajax({
+                    type: 'post',
+                    url: BigNew.article_edit,
+                    data: fd,
+                    contentType: false,
+                    processData: false,
+                    success: function (back) {
+                        // console.log(back);
+                        if (back.code == 200) {
+                            alert('操作成功！');
+                            // 如果添加成功触发文章列表的点击事件
+                            parent.$('ul.level02>li:eq(0)>a')[0].click();
+                        }
+                    }
+                });
+            })
+
+            // 存为草稿按钮点击事件
+            $('.btn-draft').on('click', function (e) {
+                e.preventDefault();
+                var fd = new FormData($('form')[0]);
+                // 将修改文章的id、文章内容和文章状态添加进fd中
+                fd.append('id',articleId);
+                fd.append('content', $('#editor').text());
+                fd.append('state', '草稿');
+                // 发送ajax请求
+                $.ajax({
+                    type: 'post',
+                    url: BigNew.article_edit,
+                    data: fd,
+                    contentType: false,
+                    processData: false,
+                    success: function (back) {
+                        // console.log(back);
+                        if (back.code == 200) {
+                            alert('操作成功！');
+                            // 如果添加成功触发文章列表的点击事件
+                            parent.$('ul.level02>li:eq(0)>a')[0].click();
+                        }
+                    }
+                });
+            })
+
+
+        })
+    </script>
+
+
 </body>
 
 </html>

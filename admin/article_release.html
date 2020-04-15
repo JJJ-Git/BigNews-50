@@ -87,7 +87,7 @@
     <!-- 文章类别下拉框模板 -->
     <script id="temp-articleType" type="text/html">
         {{each data v}}
-            <option value={{v.id}}>{{v.name}}</option>
+        <option value={{v.id}}>{{v.name}}</option>
         {{/each}}
     </script>
 
@@ -122,14 +122,14 @@
             var E = window.wangEditor
             var myEditor = new E('#editor')
             // 或者 var editor = new E( document.getElementById('editor') )
-            myEditor.create()
+            myEditor.create();
 
             // 发布按钮点击事件
             $('.btn-release').on('click', function (e) {
                 e.preventDefault();
                 var fd = new FormData($('form')[0]);
                 // 将文章内容和文章状态添加进fd中
-                fd.append('content', $('#editor').text());
+                fd.append('content', myEditor.txt.html());
                 fd.append('state', '已发布');
                 // 发送ajax请求
                 $.ajax({
