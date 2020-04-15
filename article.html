@@ -59,8 +59,10 @@
                 当前位置： <a href="#">首页</a> &gt; <a href="#">科技</a> &gt; 文章详情
             </div>
             <h3 class="article_title">马斯克的新花样？连接人脑和电脑的初创公司又筹了一笔钱</h3>
-            <div class="article_info">杰克 发布于 2019-05-08 07:08:46&nbsp;&nbsp;&nbsp;分类: 奇趣事&nbsp;&nbsp;&nbsp;阅读:
-                (98)&nbsp;&nbsp;&nbsp;评论: (0)</div>
+            <div class="article_info">
+                杰克 发布于 2019-05-08 07:08:46&nbsp;&nbsp;&nbsp;分类: 奇趣事&nbsp;&nbsp;&nbsp;
+                阅读:(98)&nbsp;&nbsp;&nbsp;评论: (0)
+            </div>
             <div class="article_con">
 
                 <p>“上天入地”还不够？硅谷“钢铁侠”马斯克名下一家低调的公司最近又融了一大笔钱。</p>
@@ -96,7 +98,7 @@
             <div class="comment_count">
                 4条评论
             </div>
-
+            <!-- 评论 -->
             <div class="comment_list_con">
                 <div class="comment_detail_list">
                     <div class="person_pic fl">乔</div>
@@ -208,6 +210,100 @@
     <!-- 引入模板引擎js文件 -->
     <script src="./js/template-web.js"></script>
     <script src="./js/jquery-1.12.4.min.js"></script>
+
+    <!-- 准备一个模板：显示文章的发布信息 -->
+    <script id="temp-article" type="text/html">
+        {{data.author}} 发布于 {{data.date}}&nbsp;&nbsp;&nbsp;分类: {{data.category}}&nbsp;&nbsp;&nbsp;阅读:( {{data.read}} )&nbsp;&nbsp;&nbsp;评论: ( {{data.comments}} )
+    </script>
+
+    <!-- 准备一个模板：显示评论 -->
+    <script id="temp-comments" type="text/html">
+        {{each data v}}
+            <div class="comment_detail_list">
+                <div class="person_pic fl">{{v.author.split('')[0]}}</div>
+                <div class="name_time fl"><b>{{v.author}}</b><span>{{v.date}} {{v.time}}</span></div>
+                <div class="comment_text fl">{{v.content}}</div>
+            </div>
+        {{/each}}
+    </script>
+
+    <script>
+        $(function () {
+            // 获取网址携带的信息
+            var receive = window.location.search;
+            var articleId = receive.split('=')[1]; // 文章id
+            if (receive == '') { // 如果为空说明是用户直接进入了此页面，此时直接进入到主页中
+                window.location.href = './index.html';
+            } else {
+                // 发送ajax请求获取数据
+                $.ajax({
+                    type: 'get',
+                    url: 'http://localhost:8080/api/v1/index/article',
+                    data: {
+                        id: articleId
+                    },
+                    success: function (back) {
+                        // console.log(back);
+                        if (back.code == 200) {
+                            $('.breadcrumb').find('a').eq(1).text(back.data.category);
+                            $('.article_title').text(back.data.title);
+                            $('.article_info').html(template('temp-article', back));
+                            $('.article_con').html(back.data.content);
+                            $('.article_links>a:eq(0)').text(back.data.prev.title).attr('href', './article.html?articleId=' + back.data.prev.id); // 上一篇
+                            $('.article_links>a:eq(1)').text(back.data.next.title).attr('href', './article.html?articleId=' + back.data.next.id); // 下一篇
+                            $('.comment_count').text(back.data.comments + '条评论');
+                        }
+                    }
+                });
+            }
+
+
+            // 发送ajax请求获取评论
+            $.ajax({
+                type: 'get',
+                url: 'http://localhost:8080/api/v1/index/get_comment',
+                data: {
+                    articleId: articleId
+                },
+                success: function (back) {
+                    // console.log(back);
+                    if (back.code == 200) {
+                        $('.comment_list_con').html(template('temp-comments', back));
+                    }
+                }
+            });
+
+
+            // 发表评论
+            $('.comment_sub').on('click', function (e) {
+                e.preventDefault();
+                var userName = $('.comment_name').val().trim();
+                var userComment = $('.comment_input').val().trim();
+                if (userName == '' || userComment == '') {
+                    alert('请输入用户名和评论！');
+                    return;
+                }
+                $.ajax({
+                    type: 'post',
+                    url: 'http://localhost:8080/api/v1/index/post_comment',
+                    data: {
+                        author: userName,
+                        content: userComment,
+                        articleId: articleId
+                    },
+                    success: function (back) {
+                        // console.log(back);
+                        if (back.code == 201) {
+                            alert('发表成功，等待管理员审核！');
+                            $('.comment_name').val('');
+                            $('.comment_input').val('');
+                        }
+                    }
+                });
+            })
+        })
+    </script>
+
 
 </body>
 

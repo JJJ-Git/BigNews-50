@@ -134,19 +134,8 @@
                     <b>发布于 2018-08-30 12:18:58</b>
                 </div>
             </div>
-
+            <!-- 分页按钮 -->
             <div id="pagination" class="page"></div>
-            <script>
-                $(function () {
-                    $("#pagination").pagination({
-                        currentPage: 2,
-                        totalPage: 8,
-                        callback: function (current) {
-                            alert('ok!');
-                        }
-                    });
-                });
-            </script>
 
         </div>
         <div class="right_con setfl">
@@ -227,6 +216,107 @@
     </div>
     <!-- 导包template -->
     <script src="./js/template-web.js"></script>
+
+    <!-- 准备一个模板：显示新闻内容 -->
+    <script id="temp-news" type="text/html">
+        {{each data.data v}}
+            <div class="common_news_list">
+                <a href="./article.html?articleId={{v.id}}" class="list_pic"><img src={{v.cover}} alt=""></a>
+                <h4><a href="./article.html?articleId={{v.id}}">{{v.title}}</a></h4>
+                <p>{{@ v.intro}}</p>
+                <div class="new_info">
+                    <span>
+                        标签：{{v.category}}&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;
+                        <i class="fa fa-eye"></i>
+                        &nbsp;阅读( {{v.read}} )&nbsp;&nbsp;&nbsp;
+                        <i class="fa fa-commenting"></i>
+                        &nbsp;评论( {{v.comments}} )
+                    </span>
+                    <b>发布于 {{v.date}}</b>
+                </div>
+            </div>
+        {{/each}}
+    </script>
+
+    <script>
+        $(function () {
+            // 获取网址携带的信息
+            var receive = window.location.search;
+            var receiveBefore = receive.split('=')[0]; // = 前面的值
+            var receiveAfter = receive.split('=')[1]; // = 后面的值
+            // 判断
+            if (receive == '') { // 如果为空说明是用户直接进入了此页面，此时直接进入到主页中
+                window.location.href = './index.html';
+            } else if (receiveBefore == '?categoryId') { // 此时是用户点导航进入此页面
+                // 发送ajax请求获取数据
+                $.ajax({
+                    type: 'get',
+                    url: 'http://localhost:8080/api/v1/index/search',
+                    data: {
+                        type: receiveAfter, // 此时用文章类型id获取数据
+                        // page:1,
+                        // perpage:6
+                    },
+                    success: function (back) {
+                        // console.log(back);
+                        if (back.code == 200) {
+                            if (back.data.totalCount == 0) { // 此时没有数据
+                                $('.setfr').html('<div class="list_title"><h3>没有数据</h3></div>');
+                            } else {
+                                var resHtml = template('temp-news', back);
+                                // resHtml += '<div id="pagination" class="page"></div>'; // 拼接分页按钮
+                                $('.setfr').html('<div class="list_title"><h3>' + back.data.data[0].category + '</h3></div>' + resHtml);
+                                // 渲染分页按钮
+                                // $("#pagination").pagination({
+                                //     currentPage: 2,
+                                //     totalPage: 8,
+                                //     callback: function (current) {
+                                //         // alert('ok!');
+                                //     }
+                                // });
+                                // $('#pagination').pagination({
+                                //     // 计算总页数：总文章数除以每一页现实的文章数，值取天花板数
+                                //     totalPages: Math.ceil(back.data.totalPage / 6),
+                                //     visiblePages: 5,
+                                //     first: '首页',
+                                //     prev: '上一页',
+                                //     next: '下一页',
+                                //     last: '尾页',
+                                //     onPageClick: function (event, page) {
+                                //         // currentPage = page; // 给保存当前显示的页数的变量赋值
+                                //         // getData(page, null);
+                                //     }
+                                // });
+                            }
+                        }
+                    }
+                });
+            } else if (receiveBefore == '?search') { // 此时是用户点搜索进入此页面
+                receiveAfter = decodeURI(receiveAfter);// 数据转码
+                // 发送ajax请求获取数据
+                $.ajax({
+                    type: 'get',
+                    url: 'http://localhost:8080/api/v1/index/search',
+                    data: {
+                        key: receiveAfter, // 此时用关键词获取数据
+                    },
+                    success: function (back) {
+                        console.log(back);
+                        if (back.code == 200) {
+                            if (back.data.totalCount == 0) { // 此时没有数据
+                                $('.setfr').html('<div class="list_title"><h3>没有数据</h3></div>');
+                            } else {
+                                var resHtml = template('temp-news', back);
+                                // resHtml += '<div id="pagination" class="page"></div>'; // 拼接分页按钮
+                                $('.setfr').html('<div class="list_title"><h3>' + back.data.data[0].category + '</h3></div>' + resHtml);
+
+                            }
+                        }
+                    }
+                });
+            }
+        })
+    </script>
 </body>
 
 </html>
