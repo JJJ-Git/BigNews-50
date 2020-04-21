@@ -18,7 +18,7 @@
     <div class="container-fluid">
         <div class="row spannel_list">
             <div class="col-sm-3 col-xs-6">
-                <div class="spannel">
+                <div class="spannel scolor00">
                     <em>10015</em><span>篇</span>
                     <b>总文章数</b>
                 </div>
@@ -59,14 +59,251 @@
         <div class="column_pannel" id="column_show"></div>
     </div>
 
+    <!-- 获取统计数据 -->
+    <script>
+        $(function () {
+            $.ajax({
+                type: 'get',
+                url: 'http://localhost:8080/api/v1/admin/data/info',
+                success: function (back) {
+                    // console.log(back);
+                    $('.scolor00>em').text(back.totalArticle);
+                    $('.scolor01>em').text(back.dayArticle);
+                    $('.scolor02>em').text(back.totalComment);
+                    $('.scolor03>em').text(back.dayComment);
+                }
+            });
+        })
+    </script>
+
+    <script>
+        $(function () {
+            // 折线图-----------------------------------
+            // 获取日新增文章数
+            $.ajax({
+                type: 'get',
+                url: 'http://localhost:8080/api/v1/admin/data/article',
+                success: function (back) {
+                    // console.log(back);
+                    if (back.code == 200) {
+                        // 准备两个数组分别用于存放横纵坐标数据
+                        let date = [];
+                        let count = [];
+                        for (let i = 0; i < back.date.length; i++) {
+                            date.push(back.date[i].date);
+                            count.push(back.date[i].count);
+                        }
+                        // 基于准备好的dom，初始化echarts实例
+                        var myChart = echarts.init(document.getElementById('curve_show'));
+
+                        // 指定图表的配置项和数据
+                        option = {
+                            title: {  // 标题
+                                text: '日新增文章数',
+                                left: 'center'
+                            },
+                            legend: {
+                                // data: ['新增文章'],
+                                top: 30
+                            },
+                            tooltip: {
+                                trigger: 'axis',
+                            },
+                            toolbox: { // 右上角工具栏
+                                show: true,
+                                right: 50,
+                                feature: {
+                                    dataZoom: {
+                                        yAxisIndex: 'none'
+                                    },
+                                    dataView: { readOnly: false },
+                                    magicType: { type: ['line', 'bar'] },
+                                    restore: {},
+                                    saveAsImage: {}
+                                }
+                            },
+                            xAxis: {
+                                type: 'category',
+                                name: '日',
+                                boundaryGap: false,
+                                data: date, // 横坐标数据
+                                // dataMax:4
+                            },
+                            yAxis: {
+                                type: 'value',
+                                // nameLocation:'文章'
+                                // max: function (value) {
+                                //     return value.max + 10;
+                                // }
+                                max: 40
+                            },
+                            series: [{
+                                name: '新增文章',
+                                data: count, // 纵坐标数据
+                                type: 'line',
+                                smooth: true,
+                                itemStyle: {
+                                    color: '#f80'
+                                },
+                                areaStyle: {
+                                    color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{
+                                        offset: 0,
+                                        color: 'rgb(255, 225, 188)'
+                                    }, {
+                                        offset: 1,
+                                        color: 'rgb(255, 255, 255)'
+                                    }])
+                                },
+                            }],
+                        };
+                        // 使用刚指定的配置项和数据显示图表。
+                        myChart.setOption(option);
+                    }
+                }
+            });
+
+
+
+            // 饼状图-----------------------------------
+            // 获取各类型文章数量统计
+            $.ajax({
+                type: 'get',
+                url: 'http://localhost:8080/api/v1/admin/data/category',
+                success: function (back) {
+                    // console.log(back);
+                    if (back.code == 200) {
+                        // 准备两个数组分别用于存放文章类型名字和数量数据,一个数组存放包含文章类型名字和数量的数据
+                        let articleName = [];
+                        let articleNum = [];
+                        let articleArr = [];
+                        for (let i = 0; i < back.date.length; i++) {
+                            articleName.push(back.date[i].name);
+                            articleNum.push(back.date[i].articles);
+                            articleArr.push({
+                                value: back.date[i].articles, name: back.date[i].name
+                            });
+                        }
+                        // 基于准备好的dom，初始化echarts实例
+                        var myChart = echarts.init(document.getElementById('pie_show'));
+
+                        // 指定图表的配置项和数据
+                        option = {
+                            title: {
+                                left: 'center',
+                                text: '分类文章数量比'
+                            },
+                            tooltip: {
+                                trigger: 'item',
+                                formatter: '{a} <br/>{b}: {c} ({d}%)'
+                            },
+                            legend: {
+                                orient: 'horizontal',
+                                top: 25,
+                                data: articleName
+                            },
+                            series: [
+                                {
+                                    name: '分类名称',
+                                    type: 'pie',
+                                    radius: ['40%', '60%'],
+                                    avoidLabelOverlap: false,
+                                    center: ['50%', '60%'],
+                                    label: {
+                                        show: true,
+                                        position: 'outside',
+                                    },
+                                    emphasis: {
+                                        label: {
+                                            show: true,
+                                            fontSize: '30',
+                                            fontWeight: 'bold'
+                                        }
+                                    },
+                                    data: articleArr
+                                }
+                            ]
+                        };
+
+                        // 使用刚指定的配置项和数据显示图表。
+                        myChart.setOption(option);
+                    }
+                }
+            });
+
+
+            // 柱形图-----------------------------------
+            // 获取各类型文章数量统计
+            $.ajax({
+                type: 'get',
+                url: 'http://localhost:8080/api/v1/admin/data/visit',
+                success: function (back) {
+                    console.log(back);
+                    // if (back.code == 200) {
+                    //     // 准备两个数组分别用于存放文章类型名字和数量数据,一个数组存放包含文章类型名字和数量的数据
+                    //     let articleName = [];
+                    //     let articleNum = [];
+                    //     let articleArr = [];
+                    //     for (let i = 0; i < back.date.length; i++) {
+                    //         articleName.push(back.date[i].name);
+                    //         articleNum.push(back.date[i].articles);
+                    //         articleArr.push({
+                    //             value: back.date[i].articles, name: back.date[i].name
+                    //         });
+                    //     }
+                    //     // 基于准备好的dom，初始化echarts实例
+                    //     var myChart = echarts.init(document.getElementById('column_show'));
+
+                    //     // 指定图表的配置项和数据
+                    //     option = {
+                    //         tooltip: {
+                    //             trigger: 'item',
+                    //             formatter: '{a} <br/>{b}: {c} ({d}%)'
+                    //         },
+                    //         legend: {
+                    //             orient: 'horizontal',
+                    //             // left: 0,
+                    //             data: articleName
+                    //         },
+                    //         series: [
+                    //             {
+                    //                 name: '访问来源',
+                    //                 type: 'pie',
+                    //                 radius: ['50%', '70%'],
+                    //                 avoidLabelOverlap: false,
+                    //                 center: ['50%', '55%'],
+                    //                 label: {
+                    //                     show: true,
+                    //                     position: 'outside'
+                    //                 },
+                    //                 emphasis: {
+                    //                     label: {
+                    //                         show: true,
+                    //                         fontSize: '30',
+                    //                         fontWeight: 'bold'
+                    //                     }
+                    //                 },
+                    //                 data: articleArr
+                    //             }
+                    //         ]
+                    //     };
+
+                    //     // 使用刚指定的配置项和数据显示图表。
+                    //     myChart.setOption(option);
+                    // }
+                }
+            });
+        })
+    </script>
+
+
 
     <!-- 折线图 -->
-    <script>
+    <!-- <script>
         var json = '{"code":200,"msg":"获取成功","date":[{"date":"2019-05-20","count":23},{"date":"2019-05-21","count":19},{"date":"2019-05-22","count":29},{"date":"2019-05-23","count":24},{"date":"2019-05-24","count":28},{"date":"2019-05-25","count":28},{"date":"2019-05-26","count":19},{"date":"2019-05-27","count":25},{"date":"2019-05-28","count":25}]}';
         var obj = JSON.parse(json);
         loadEchars(obj);
 
-        function loadEchars(obj) {
+        function loadEchars(obj) { 
             // 基于准备好的dom，初始化echarts实例
             var myChart = echarts.init(document.getElementById('curve_show'));
 
@@ -146,10 +383,10 @@
             // 使用刚指定的配置项和数据显示图表。
             myChart.setOption(option);
         }
-    </script>
+    </script> -->
 
     <!-- 环形图 -->
-    <script>
+    <!-- <script>
         // 基于准备好的dom，初始化echarts实例
         var myChart1 = echarts.init(document.getElementById('pie_show'));
 
@@ -196,7 +433,7 @@
         };
         // 使用刚指定的配置项和数据显示图表。
         myChart1.setOption(option1);
-    </script>
+    </script> -->
     <!-- 柱状图 -->
     <script>
         // 基于准备好的dom，初始化echarts实例
